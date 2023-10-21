@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>History</title>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.5.1.min.js"></script>
+    <script>
+        var csrfToken = '{{ csrf_token }}';//csrf防伪令牌
+        document.addEventListener("DOMContentLoaded", function() {
+            getHistory();
+        });
+        function getHistory(){
+            $.ajax({
+                url: 'get_history/',
+                type: 'POST',
+                data: {'message': 'start'},
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                success: function(response) {
+                    var formula_list = response.formula_list;
+                    var result_list = response.result_list;
+                    for (var i = 0; i < 10; i++) {
+                        var j = i+1;
+                        var row = $('<tr>').appendTo('#history_table tbody');
+                        $('<td>').text(j).appendTo(row);
+                        $('<td>').text(formula_list[i]).appendTo(row);
+                        $('<td>').text(result_list[i]).appendTo(row);
+                    }
+                },
+                error: function(error) {
+                }
+            });
+        }
+    </script>
+    <style>
+        body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height:100vh;
+        }
+
+        .container{
+            border:1px solid #003a6c;
+            border-width:2px;
+            background-color:#a3cf62;
+        }
+        th,td{
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+            width: auto;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <table id="history_table">
+            <thead>
+                <tr>
+                    <th>Num.</th>
+                    <th>Formula</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!--the history list appends to here in the function-->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

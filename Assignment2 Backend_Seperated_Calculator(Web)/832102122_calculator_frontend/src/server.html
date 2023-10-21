@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Science Calculator V2.0</title>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.5.1.min.js"></script>
+    <script>
+        var csrfToken = '{{ csrf_token }}';//csrf防伪令牌
+        var calculateDone = false;
+        var rad_deg;
+        var inv;
+        function clickButton(x){//按钮点击事件
+            var currentDisplayValue = document.form.display.value;
+            if(currentDisplayValue == '0'){
+                document.form.display.value = x;
+            }else if(calculateDone){
+                if(x == '+' || x == '-' || x == '×' || x == '÷' || x == '^' || x == '!'){
+                    document.form.display.value = currentDisplayValue + x;
+                    calculateDone = false;
+                }else{
+                    document.form.display.value = x;
+                    calculateDone = false;
+                }
+            }else{
+                document.form.display.value = currentDisplayValue + x;
+            }
+        }
+
+        function calculate(){//与后端交互，获取计算结果
+            var getFormula = document.form.display.value;
+            var sendFormula = getFormula.toString();
+            $.ajax({
+                url: 'calculation/',
+                type: 'POST',
+                data: {'sendFormula': sendFormula},
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                success: function(response) {
+                    document.form.display.value = response.result;
+                },
+                error: function(error) {
+                    document.form.display.value = "Error";
+                }
+            });
+            calculateDone = true;
+        }
+
+
+        function clean(){//清屏
+            document.form.display.value = "0";
+            calculateDone = false;
+        }
+
+        function back(){//删除一位
+            var currentDisplayValue = document.form.display.value;
+            currentDisplayValue = currentDisplayValue.slice(0,-1);
+            document.form.display.value = currentDisplayValue;
+            calculateDone = false;
+        }
+
+        function openHistory(){
+            document.form.display.value = "ans"
+            window.open('history/', '_blank');
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            setMode();
+            clearHistory();//清除上次留在表单里的历史记录
+        });
+
+        function setMode(){//设置三角函数计算模式、反函数模式
+            $.ajax({
+                url: 'set_mode/',
+                type: 'POST',
+                data: {'message': 'start'},
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                success: function(response) {
+                    rad_deg = response.rad_deg;
+                    inv = response.inv;
+                    if(rad_deg == "rad"){
+                        buttonRad = document.getElementById('rad');
+                        buttonDeg = document.getElementById('deg');
+                        buttonRad.style.color = 'red';
+                        buttonDeg.style.color = 'black';
+                    }
+                    if(inv == 1){
+                        buttonInv = document.getElementById('inv');
+                        buttonInv.style.color = 'red';
+                        buttonSin = document.getElementById('sin');
+                        buttonCos = document.getElementById('cos');
+                        buttonTan = document.getElementById('tan');
+                        buttonLog = document.getElementById('log');
+                        buttonLn = document.getElementById('ln');
+                        buttonSqRoot = document.getElementById('squareRoot');
+
+                        buttonSin.value = 'sin⁻¹';
+                        buttonCos.value = 'cos⁻¹';
+                        buttonTan.value = 'tan⁻¹';
+                        buttonLog.value = '10^';
+                        buttonLn.value = 'e^';
+                        buttonSqRoot.value = 'x²';
+
+                        buttonSin.onclick = () => clickButton('sin⁻¹(');
+                        buttonCos.onclick = () => clickButton('cos⁻¹(');
+                        buttonTan.onclick = () => clickButton('tan⁻¹');
+                        buttonLog.onclick = () => clickButton('10^');
+                        buttonLn.onclick = () => clickButton('e^');
+                        buttonSqRoot.onclick = () => clickButton('^2');
+                    }
+                },
+                error: function(error) {
+                    document.form.display.value = "Network Error";
+                }
+            });
+        }
+
+        function clearHistory(){//清除上次使用的历史记录
+            $.ajax({
+                url: 'clear_history/',
+                type: 'POST',
+                data: {'message': 'start'},
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                success: function(response) {
+                },
+                error: function(error) {
+                    document.form.display.value = "Network Error";
+                }
+            });
+        }
+
+        function changeTriMode(s){//改变三角函数计算模式（弧度制/角度制）
+            if(rad_deg == "rad"){
+                rad_deg = "deg";
+                buttonRad = document.getElementById('rad');
+                buttonDeg = document.getElementById('deg');
+                buttonRad.style.color = 'black';
+                buttonDeg.style.color = 'red';
+            }else if(rad_deg == "deg"){
+                rad_deg = "rad";
+                buttonRad = document.getElementById('rad');
+                buttonDeg = document.getElementById('deg');
+                buttonRad.style.color = 'red';
+                buttonDeg.style.color = 'black';
+            }
+
+            $.ajax({
+                url: 'change_tri_mode/',
+                type: 'POST',
+                data: {'rad_deg': rad_deg},
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                success: function(response) {
+                },
+                error: function(error) {
+                    document.form.display.value = "Network Error";
+                }
+            });
+        }
+
+        function changeInvMode(){//改变inv模式（是否采用逆函数）
+            if(inv == 0){
+                inv = 1;
+                buttonInv = document.getElementById('inv');
+                buttonInv.style.color = 'red';
+                buttonSin = document.getElementById('sin');
+                buttonCos = document.getElementById('cos');
+                buttonTan = document.getElementById('tan');
+                buttonLog = document.getElementById('log');
+                buttonLn = document.getElementById('ln');
+                buttonSqRoot = document.getElementById('squareRoot');
+
+                buttonSin.value = 'sin⁻¹';
+                buttonCos.value = 'cos⁻¹';
+                buttonTan.value = 'tan⁻¹';
+                buttonLog.value = '10^';
+                buttonLn.value = 'e^';
+                buttonSqRoot.value = 'x²';
+
+                buttonSin.onclick = () => clickButton('sin⁻¹(');
+                buttonCos.onclick = () => clickButton('cos⁻¹(');
+                buttonTan.onclick = () => clickButton('tan⁻¹');
+                buttonLog.onclick = () => clickButton('10^');
+                buttonLn.onclick = () => clickButton('e^');
+                buttonSqRoot.onclick = () => clickButton('^2');
+            }else if(inv == 1){
+                inv = 0;
+                buttonInv = document.getElementById('inv');
+                buttonInv.style.color = 'black';
+                buttonSin = document.getElementById('sin');
+                buttonCos = document.getElementById('cos');
+                buttonTan = document.getElementById('tan');
+                buttonLog = document.getElementById('log');
+                buttonLn = document.getElementById('ln');
+                buttonSqRoot = document.getElementById('squareRoot');
+
+                buttonSin.value = 'sin';
+                buttonCos.value = 'cos';
+                buttonTan.value = 'tan';
+                buttonLog.value = 'log';
+                buttonLn.value = 'ln';
+                buttonSqRoot.value = '√￣';
+
+                buttonSin.onclick = () => clickButton('sin(');
+                buttonCos.onclick = () => clickButton('cos(');
+                buttonTan.onclick = () => clickButton('tan');
+                buttonLog.onclick = () => clickButton('log(');
+                buttonLn.onclick = () => clickButton('ln(');
+                buttonSqRoot.onclick = () => clickButton('√');
+            }
+
+            $.ajax({
+                url: 'change_inv_mode/',
+                type: 'POST',
+                data: {'inv': inv},
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                success: function(response) {
+                },
+                error: function(error) {
+                    document.form.display.value = "Network Error";
+                }
+            });
+        }
+
+    </script>
+    <style>
+        body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height:100vh;
+        }
+        .container{
+            border:1px solid #003a6c;
+            border-width:2px;
+            background-color:#f2eada;
+        }
+        .button{
+            width:50px;
+            height:50px;
+
+            font-size:25;
+            text-align:center;
+
+            margin:2px;
+            padding:5px;
+
+            cursor:pointer
+
+        }
+        input#display{
+            width:268px;
+            height:35px;
+            margin:5px;
+            padding:5px;
+            font-size:25;
+            text-align:right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form name="form">
+            <input class="textview" name="display" id="display" value="0">
+        </form>
+        <table>
+
+            <!--按钮第一行-->
+            <tr>
+                <td><input class="button" type="button" value="sin" id="sin" style="background-color:#eacda1;" onclick="clickButton('sin(')"></td>
+                <td><input class="button" type="button" value="cos" id="cos" style="background-color:#eacda1;" onclick="clickButton('cos(')"></td>
+                <td><input class="button" type="button" value="tan" id="tan" style="background-color:#eacda1;" onclick="clickButton('tan(')"></td>
+                <td><input class="button" type="button" value="rad" id="rad" style="background-color:#eacda1;" onclick="changeTriMode('rad')"></td>
+                <td><input class="button" type="button" value="deg" id="deg" style="background-color:#eacda1; color:red" onclick="changeTriMode('deg')"></td>
+            </tr>
+            <!--按钮第二行-->
+            <tr>
+                <td><input class="button" type="button" value="log" id="log" style="background-color:#eacda1;" onclick="clickButton('log(')"></td>
+                <td><input class="button" type="button" value="ln" id="ln"  style="background-color:#eacda1;" onclick="clickButton('ln(')"></td >
+                <td><input class="button" type="button" value="(" id="leftBracket" style="background-color:#eacda1;" onclick="clickButton('(')"></td>
+                <td><input class="button" type="button" value=")" id="rightBracket" style="background-color:#eacda1;" onclick="clickButton(')')"></td>
+                <td><input class="button" type="button" value="inv" id="inv" style="background-color:#eacda1;" onclick="changeInvMode()"></td>
+            </tr>
+            <!--按钮第三行-->
+            <tr>
+                <td><input class="button" type="button" value="!" id="factorial" style="background-color:#eacda1;" onclick="clickButton('!')"></td>
+                <td><input class="button" type="button" value="C" id="clear" style="background-color:#b1b2b2;" onclick="clean()"></td>
+                <td><input class="button" type="button" value="%" id="remainder" style="background-color:#b1b2b2;" onclick="clickButton('%')"></td>
+                <td><input class="button" type="button" value="←" id="delete" style="background-color:#b1b2b2;" onclick="back()"></td>
+                <td><input class="button" type="button" value="÷" id="divide" style="background-color:#b1b2b2;" onclick="clickButton('÷')"></td>
+            </tr>
+            <!--按钮第四行-->
+            <tr>
+                <td><input class="button" type="button" value="^" id="power" style="background-color:#eacda1;" onclick="clickButton('^')"></td>
+                <td><input class="button" type="button" value="7" id="seven" style="background-color:#eacda1;" onclick="clickButton('7')"></td>
+                <td><input class="button" type="button" value="8" id="eight" style="background-color:#eacda1;" onclick="clickButton('8')"></td>
+                <td><input class="button" type="button" value="9" id="nine" style="background-color:#eacda1;" onclick="clickButton('9')"></td>
+                <td><input class="button" type="button" value="×" id="multiple" style="background-color:#b1b2b2;" onclick="clickButton('×')"></td>
+            </tr>
+            <!--按钮第五行-->
+            <tr>
+                <td><input class="button" type="button" value="√￣" id="squareRoot" style="background-color:#eacda1;" onclick="clickButton('√')"></td>
+                <td><input class="button" type="button" value="4" id="four" style="background-color:#eacda1;" onclick="clickButton('4')"></td>
+                <td><input class="button" type="button" value="5" id="five" style="background-color:#eacda1;" onclick="clickButton('5')"></td>
+                <td><input class="button" type="button" value="6" id="six" style="background-color:#eacda1;" onclick="clickButton('6')"></td>
+                <td><input class="button" type="button" value="-" id="minus" style="background-color:#b1b2b2;" onclick="clickButton('-')"></td>
+            </tr>
+            <!--按钮第六行-->
+            <tr>
+                <td><input class="button" type="button" value="π" id="pi" style="background-color:#eacda1;" onclick="clickButton('π')"></td>
+                <td><input class="button" type="button" value="1" id="one" style="background-color:#eacda1;" onclick="clickButton('1')"></td>
+                <td><input class="button" type="button" value="2" id="two" style="background-color:#eacda1;" onclick="clickButton('2')"></td>
+                <td><input class="button" type="button" value="3" id="three" style="background-color:#eacda1;" onclick="clickButton('3')"></td>
+                <td><input class="button" type="button" value="+" id="addition" style="background-color:#b1b2b2;" onclick="clickButton('+')"></td>
+            </tr>
+            <!--按钮第七行-->
+            <tr>
+                <td><input class="button" type="button" value="e" id="e" style="background-color:#eacda1;" onclick="clickButton('e')"></td>
+                <td><input class="button" type="button" value="00" id="dZero" style="background-color:#eacda1;" onclick="clickButton('00')"></td>
+                <td><input class="button" type="button" value="0" id="zero" style="background-color:#eacda1;" onclick="clickButton('0')"></td>
+                <td><input class="button" type="button" value="." id="dot" style="background-color:#eacda1;" onclick="clickButton('.')"></td>
+                <td><input class="button" type="button" value="=" id="equivalence" style="background-color:#eaa755;" onclick="calculate()"></td>
+            </tr>
+            <tr>
+                <td><input class="button" type="button" value="ans" id="ans" style="background-color:#eacda1;" onclick="openHistory()"></td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>
